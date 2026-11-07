@@ -23,7 +23,7 @@ jobs:
           sudo useradd -m -s /bin/bash kaka
           echo "kaka:${{ secrets.RDP_PASSWORD }}" | sudo chpasswd
           sudo usermod -aG sudo kaka
-          echo "xfce4-session" | sudo tee /home/kaka/.xsession
+          echo "dbus-launch --exit-with-session startxfce4" | sudo tee /home/kaka/.xsession
           sudo chown kaka:kaka /home/kaka/.xsession
           sudo systemctl enable --now xrdp
 
