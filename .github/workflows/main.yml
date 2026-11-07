@@ -49,7 +49,7 @@ jobs:
 
       - name: Tampilin IP & nahan VM
         run: |
-        set +e
+          set +e
           tailscale ip -4
           for i in $(seq 1 700); do
             sleep 30
