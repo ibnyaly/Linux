@@ -29,6 +29,7 @@ jobs:
         run: |
           sudo tee /etc/xrdp/startwm.sh > /dev/null <<'EOF'
           #!/bin/sh
+          exec > /tmp/startwm.log 2>&1
           unset DBUS_SESSION_BUS_ADDRESS
           unset XDG_RUNTIME_DIR
           export XDG_CONFIG_DIRS=/etc/xdg
@@ -49,4 +50,10 @@ jobs:
       - name: Tampilin IP & nahan VM
         run: |
           tailscale ip -4
-          sleep 21000
+          for i in $(seq 1 700); do
+            sleep 30
+            echo "=== $(date +%T) ==="
+            sudo tail -n 15 /var/log/xrdp-sesman.log
+            cat /tmp/startwm.log 2>/dev/null | tail -n 30
+            sudo tail -n 30 /home/kaka/.xsession-errors 2>/dev/null
+          done
