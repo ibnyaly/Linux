@@ -1,0 +1,33 @@
+name: Remote PC
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Install Tailscale
+        run: |
+          curl -fsSL https://tailscale.com/install.sh | sh
+          sudo tailscale up --authkey=${{ secrets.TS_AUTHKEY }} --hostname=gh-pc
+
+      - name: Install desktop + xrdp
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xfce4 dbus-x11 xrdp
+
+      - name: Bikin user
+        run: |
+          sudo useradd -m -s /bin/bash kaka
+          echo "kaka:${{ secrets.RDP_PASSWORD }}" | sudo chpasswd
+          sudo usermod -aG sudo kaka
+          echo "xfce4-session" | sudo tee /home/kaka/.xsession
+          sudo chown kaka:kaka /home/kaka/.xsession
+          sudo systemctl enable --now xrdp
+
+      - name: Tampilin IP & nahan VM
+        run: |
+          tailscale ip -4
+          sleep 21000
