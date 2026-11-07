@@ -16,16 +16,35 @@ jobs:
       - name: Install desktop + xrdp
         run: |
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xfce4 dbus-x11 xrdp
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            xfce4 xfce4-goodies dbus-x11 xrdp xorgxrdp
 
       - name: Bikin user
         run: |
           sudo useradd -m -s /bin/bash kaka
           echo "kaka:${{ secrets.RDP_PASSWORD }}" | sudo chpasswd
           sudo usermod -aG sudo kaka
-          echo "dbus-launch --exit-with-session startxfce4" | sudo tee /home/kaka/.xsession
-          sudo chown kaka:kaka /home/kaka/.xsession
-          sudo systemctl enable --now xrdp
+
+      - name: Setting sesi xrdp
+        run: |
+          sudo tee /etc/xrdp/startwm.sh > /dev/null <<'EOF'
+          #!/bin/sh
+          unset DBUS_SESSION_BUS_ADDRESS
+          unset XDG_RUNTIME_DIR
+          export XDG_CONFIG_DIRS=/etc/xdg
+          export XDG_CURRENT_DESKTOP=XFCE
+          exec dbus-launch --exit-with-session startxfce4
+          EOF
+          sudo chmod +x /etc/xrdp/startwm.sh
+          sudo adduser xrdp ssl-cert
+          sudo systemctl enable xrdp
+          sudo systemctl restart xrdp
+
+      - name: Cek instalasi
+        run: |
+          which startxfce4 xfce4-session dbus-launch
+          dpkg -l | grep -E "xfce4-session|xfconf|xorgxrdp"
+          sudo systemctl status xrdp --no-pager
 
       - name: Tampilin IP & nahan VM
         run: |
