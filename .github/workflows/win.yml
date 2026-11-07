@@ -1,0 +1,33 @@
+name: Remote PC Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pc:
+    runs-on: windows-2022
+    timeout-minutes: 350
+    steps:
+      - name: Aktifin RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Restart-Service TermService -Force
+
+      - name: Bikin user
+        run: |
+          $pw = ConvertTo-SecureString "${{ secrets.RDP_PASSWORD }}" -AsPlainText -Force
+          New-LocalUser -Name "kaka" -Password $pw -AccountNeverExpires
+          Add-LocalGroupMember -Group "Administrators" -Member "kaka"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "kaka"
+
+      - name: Install Tailscale
+        run: |
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi" -OutFile "$env:TEMP\ts.msi"
+          Start-Process msiexec.exe -ArgumentList "/i","$env:TEMP\ts.msi","/quiet","/norestart" -Wait
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TS_AUTHKEY }} --hostname=gh-win
+
+      - name: Tampilin IP & nahan VM
+        run: |
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
+          Start-Sleep -Seconds 21000
